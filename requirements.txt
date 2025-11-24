@@ -1,0 +1,12 @@
+requests
+python-dateutil
+pandas
+pandas-stubs
+ipykernel
+matplotlib
+scikit-learn
+scikit-learn-stubs
+numpy
+ta
+torch
+tqdm

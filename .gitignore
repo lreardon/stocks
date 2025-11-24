@@ -1,0 +1,7 @@
+__pycache__/
+
+/archive/
+/data/
+/ml-datasets/
+
+**/.env
