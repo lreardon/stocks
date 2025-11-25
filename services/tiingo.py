@@ -125,7 +125,7 @@ t = Tiingo()
 #     ticker='SPY',
 # )
 t.get_historical_multimonth(
-    ticker='QQQ',
+    ticker='AAPL',
     months=24,
     merge=True,
 )

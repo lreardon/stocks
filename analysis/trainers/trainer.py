@@ -1,4 +1,3 @@
-from analysis.trainers.stock_transformer import StockTransformer
 import numpy as np
 import torch
 import torch.nn as nn
@@ -6,11 +5,21 @@ from torch.utils.data import TensorDataset, DataLoader
 
 
 class Trainer:
+    criterion: nn.Module
+    model: nn.Module
+    number_of_epochs: int
+
     def __init__(
         self,
-        data: list[np.ndarray]
-    ):
+        data: list[np.ndarray],
+        criterion: nn.Module,
+        model: nn.Module,
+        number_of_epochs: int
+    ) -> None:
         self.data = data
+        self.criterion = criterion
+        self.model = model
+        self.number_of_epochs = number_of_epochs
         self.split_data()
         self.create_training_entries(sequence_length=50)
         self.create_validation_entries(sequence_length=50)
@@ -19,7 +28,7 @@ class Trainer:
         self,
         train_ratio: float = 0.7,
         val_ratio: float = 0.15
-    ):
+    ) -> None:
         total_size = len(self.data)
         train_end = int(total_size * train_ratio)
         val_end = train_end + int(total_size * val_ratio)
@@ -31,22 +40,14 @@ class Trainer:
         self.train_mean = np.mean(self.train_data, axis=0)  # Shape: (90,)
         self.train_std = np.std(self.train_data, axis=0)    # Shape: (90,)
         
-        # Normalize each dimension independently
         self.train_data_normalized = (self.train_data - self.train_mean) / (self.train_std + 1e-8)
         self.val_data_normalized = (self.val_data - self.train_mean) / (self.train_std + 1e-8)
         self.test_data_normalized = (self.test_data - self.train_mean) / (self.train_std + 1e-8)
-
-        print(f"\nData statistics:")
-        print(f"Train mean: {np.mean(self.train_data_normalized):.4f}, std: {np.std(self.train_data_normalized):.4f}")
-        print(f"Val mean (after norm): {np.mean(self.val_data_normalized):.4f}, std: {np.std(self.val_data_normalized):.4f}")
-        print(f"Val/Train std ratio: {np.std(self.val_data_normalized) / np.std(self.train_data_normalized):.2f}")
-
-
         
     def create_training_entries(
         self,
         sequence_length: int
-    ):
+    ) -> None:
         train_data = self.train_data_normalized
 
         self.training_entries: list[dict[str, np.ndarray]] = []
@@ -61,7 +62,7 @@ class Trainer:
     def create_validation_entries(
             self,
             sequence_length: int
-        ):
+        ) -> None:
         val_data = self.val_data_normalized
 
         self.validation_entries: list[dict[str, np.ndarray]] = []
@@ -74,8 +75,8 @@ class Trainer:
             self.validation_entries.append(entry)
     
     def train(
-        self
-    ):
+        self,
+    ) -> None:
         train_inputs = np.array([entry['input'] for entry in self.training_entries])
         train_targets = np.array([entry['target'] for entry in self.training_entries])
         X_train = torch.FloatTensor(train_inputs)
@@ -91,26 +92,19 @@ class Trainer:
         train_loader = DataLoader(dataset, batch_size=32, shuffle=True)
 
         # Initialize model, loss, optimizer
-        self.model = StockTransformer(
-            d_model=self.data[0].shape[0],
-            nhead=6, # number of attention heads. Must divide d_model and should be even.
-            num_layers=2,
-            dim_feedforward=256 
-        )
-        criterion = nn.MSELoss()
+
         optimizer = torch.optim.Adam(self.model.parameters(), lr=0.0001)
 
         # Training loop
-        num_epochs = 50
 
-        for epoch in range(num_epochs):
-            self.model.train()
+        for epoch in range(self.number_of_epochs):
+            _: nn.Module = self.model.train()
             total_loss = 0
             
             for batch_inputs, batch_targets in train_loader:
                 # Forward pass
                 predictions = self.model(batch_inputs)
-                loss = criterion(predictions, batch_targets)
+                loss = self.criterion(predictions, batch_targets)
                 
                 # Backward pass
                 optimizer.zero_grad()
@@ -122,18 +116,18 @@ class Trainer:
             avg_loss = total_loss / len(train_loader)
 
             # Validation
-            self.model.eval()
+            _: nn.Module = self.model.eval()
             with torch.no_grad():
                 val_preds = self.model(X_val)
-                val_loss = criterion(val_preds, y_val)
+                val_loss = self.criterion(val_preds, y_val)
         
             # Print both losses
-            print(f'Epoch {epoch+1}/{num_epochs}, Train Loss: {avg_loss:.6f}, Val Loss: {val_loss.item():.6f}')
+            print(f'Epoch {epoch+1}/{self.number_of_epochs}, Train Loss: {avg_loss:.6f}, Val Loss: {val_loss.item():.6f}')
     
     def predict(
         self,
-        input_sequence: np.ndarray,
-    ):
+        input_sequence: list[np.ndarray],
+    ) -> np.ndarray:
         """
         Make a prediction and return it in original scale
         
@@ -188,3 +182,18 @@ class Trainer:
     #         print(f"Actual (first 5 dims): {targets_actual[i][:5]}")
         
     #     return predictions_actual, targets_actual
+
+    def evaluate_model_on_test(self) -> float:
+        test_data = self.test_data_normalized
+    
+        test_inputs = np.array([entry['input'] for entry in test_data])
+        test_targets = np.array([entry['target'] for entry in test_data])
+        X_test = torch.FloatTensor(test_inputs)
+        y_test = torch.FloatTensor(test_targets)
+
+        _: nn.Module = self.model.eval()
+        with torch.no_grad():
+            test_preds: torch.Tensor = self.model(X_test)
+            test_loss: float = self.criterion(test_preds, y_test)    
+
+        return test_loss    

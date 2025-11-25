@@ -7,6 +7,9 @@ matplotlib
 scikit-learn
 scikit-learn-stubs
 numpy
+xarray
 ta
 torch
 tqdm
+plotly
+nbformat # Required for plotly

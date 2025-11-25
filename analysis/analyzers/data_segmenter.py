@@ -1,3 +1,4 @@
+from pandas import DataFrame
 from analysis.transformation import Transformation
 from analysis.analyzers.data_transformer import DataTransformer
 from analysis.segmenters.segmenter import Segmenter
@@ -7,10 +8,10 @@ import pickle
 import numpy as np
 
 class DataSegmenter(DataTransformer):
-    segmenter: Segmenter
-    segments: list[pd.DataFrame]
-    transformation: Transformation
     ticker: str
+    transformation: Transformation
+    segmenter: Segmenter
+    segments: list[DataFrame]
 
     def __init__(self,
                  ticker: str,
@@ -20,14 +21,11 @@ class DataSegmenter(DataTransformer):
         super().__init__(ticker, transformation)
         self.segmenter = segmenter
         # if (self.segments is not None):
-            # self.segments: list[pd.DataFrame] | None = None
-
+            # self.segments: list[DataFrame] | None = None
     
-    def use_segmenter(self, segmenter: Segmenter):
-        self.segmenter = segmenter
-    
-    def segment_data(self):
+    def segment_data(self) -> list[DataFrame]:
         self.segments = self.segmenter(self.transformed_df)
+        return self.segments
     
     def save_segmented_data(self):
         cwd = Path.cwd()
@@ -43,3 +41,6 @@ class DataSegmenter(DataTransformer):
 
     def vectorize_segments(self) -> None:
         self.vectorized_segments: list[np.ndarray] = [segment.values.flatten() for segment in self.segments]
+
+    def identify_segment(self, segment: DataFrame) -> int | None:
+        pass

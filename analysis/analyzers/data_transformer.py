@@ -14,6 +14,7 @@ class DataTransformer(DataLoader):
         self.transformation_name = transformation_name or transformation.__class__.__name__
 
     def transform_data(self) -> None:
+        print("Transforming data...")
         self.transformed_df: pd.DataFrame = self.transformation(self.df)
     
     def save_transformed_data(self) -> None:

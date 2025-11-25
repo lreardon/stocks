@@ -23,6 +23,14 @@
     "reportMissingParameterType": "warning",
     "reportMissingTypeArgument": "warning",
     "reportPrivateUsage": "warning",
+    "reportUnusedImport": "warning",
+    "reportUnusedCallResult": "warning",
+    "reportUnusedClass": "warning",
+    "reportUnusedExcept": "warning",
+    "reportUnusedCoroutine": "warning",
+    "reportUnusedExpression": "warning",
+    "reportUnusedFunction": "warning",
+    "reportUnusedVariable": "warning"
   },
   "python.analysis.typeEvaluation.strictDictionaryInference": true,
   "python.analysis.typeEvaluation.strictListInference": true,
@@ -30,5 +38,5 @@
   "python.analysis.inlayHints.variableTypes": true,
   "python.analysis.inlayHints.functionReturnTypes": true,
   "python.analysis.generateWithTypeAnnotation": true,
-  "python.analysis.diagnosticMode": "workspace",
+  "python.analysis.diagnosticMode": "workspace"
 }

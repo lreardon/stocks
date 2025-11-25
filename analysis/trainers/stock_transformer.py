@@ -4,10 +4,10 @@ import torch.nn as nn
 class StockTransformer(nn.Module):
     def __init__(
         self,
-        d_model=100,
-        nhead=4,
-        num_layers=4,
-        dim_feedforward=512
+        d_model: int,
+        nhead: int,
+        num_layers: int,
+        dim_feedforward: int
     ):
         super().__init__()
         

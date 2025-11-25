@@ -11,6 +11,6 @@ def ohlcv_to_ohlcv_and_deltas(df: pd.DataFrame) -> pd.DataFrame:
     # wdf['volume_delta'] = wdf['volume'] / wdf['volume'].shift(1) - 1
     wdf.dropna(inplace=True)
 
-    rdf = wdf[['open', 'high', 'low', 'close', 'volume', 'open_delta', 'high_delta', 'low_delta', 'close_delta']]
+    rdf = wdf[['date', 'open', 'high', 'low', 'close', 'volume', 'open_delta', 'high_delta', 'low_delta', 'close_delta']]
 
     return rdf
