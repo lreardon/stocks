@@ -88,10 +88,10 @@ class SchwabAuth:
             raise ValueError("No authorization code found in callback URL")
 
         # Exchange code for tokens
-        self._get_tokens(auth_code)
+        self.get_tokens(auth_code)
         print("Authorization successful!")
 
-    def _get_tokens(self, auth_code: str):
+    def get_tokens(self, auth_code: str):
         """Exchange authorization code for access and refresh tokens."""
         # Use Basic Authentication (standard OAuth2 pattern)
         from base64 import b64encode

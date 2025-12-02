@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Option Chain - Schwab API</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <script>
+        function loadSymbol(symbol) {
+            document.getElementById('symbolInput').value = symbol;
+            document.getElementById('symbolForm').submit();
+        }
+    </script>
+</head>
+<body>
+    <div class="header">
+        <h1>📊 Option Chain Viewer</h1>
+        <a href="/dashboard" class="button">Back to Dashboard</a>
+    </div>
+    <div class="form-section">
+        <form id="symbolForm" method="get" action="/options-chain">
+            <div class="input-group">
+                <label for="symbolInput">Enter Symbol:</label>
+                <input type="text" id="symbolInput" name="symbol" placeholder="e.g., AAPL, SPY, QQQ" autofocus required>
+            </div>
+            <button type="submit" class="button" style="width: 100%; font-size: 16px;">📈 View Option Chain</button>
+        </form>
+        <div class="quick-symbols">
+            <strong>Quick Select:</strong><br>
+            <span class="quick-symbol" onclick="loadSymbol('SPY')">SPY</span>
+            <span class="quick-symbol" onclick="loadSymbol('QQQ')">QQQ</span>
+            <span class="quick-symbol" onclick="loadSymbol('AAPL')">AAPL</span>
+            <span class="quick-symbol" onclick="loadSymbol('TSLA')">TSLA</span>
+            <span class="quick-symbol" onclick="loadSymbol('MSFT')">MSFT</span>
+            <span class="quick-symbol" onclick="loadSymbol('NVDA')">NVDA</span>
+            <span class="quick-symbol" onclick="loadSymbol('AMD')">AMD</span>
+            <span class="quick-symbol" onclick="loadSymbol('META')">META</span>
+        </div>
+        <div class="info">
+            <strong>💡 Tip:</strong> The option chain will automatically refresh every 5 seconds to show real-time price updates. You can pause/resume auto-refresh at any time.
+        </div>
+    </div>
+</body>
+</html>

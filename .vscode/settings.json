@@ -24,7 +24,7 @@
     "reportMissingTypeArgument": "warning",
     "reportPrivateUsage": "warning",
     "reportUnusedImport": "warning",
-    "reportUnusedCallResult": "warning",
+    "reportUnusedCallResult": "information",
     "reportUnusedClass": "warning",
     "reportUnusedExcept": "warning",
     "reportUnusedCoroutine": "warning",

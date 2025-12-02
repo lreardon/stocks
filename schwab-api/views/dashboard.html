@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dashboard - Schwab Trading API</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <div class="header">
+        <h1>📊 Trading Dashboard</h1>
+        <div>
+            <a href="/test-connection" class="button">Test Connection</a>
+            <a href="/options-chain" class="button">Options Chain</a>
+            <a href="/logout" class="button logout">Logout</a>
+        </div>
+    </div>
+    <div class="status">
+        <strong>✓ Connected to Schwab API</strong><br>
+        Token expires: {{ expiry }}<br>
+        <small>Tokens auto-refresh when needed</small>
+    </div>
+    <div class="section">
+        <h2>🔌 API Endpoints</h2>
+        <p>Use these endpoints with your account hash ID from Schwab:</p>
+        <h3>Account Information</h3>
+        <div class="api-endpoint">
+            <span class="method get">GET</span>
+            /api/account/&lt;account_id&gt;?fields=positions
+        </div>
+        <h3>Options Chain</h3>
+        <div class="api-endpoint">
+            <span class="method get">GET</span>
+            /api/options/chain?symbol=AAPL&contract_type=CALL&strike_count=5
+        </div>
+        <h3>Place Order</h3>
+        <div class="api-endpoint">
+            <span class="method post">POST</span>
+            /api/orders/&lt;account_id&gt;
+        </div>
+        <p style="margin-left: 20px; color: #666;">Body: <code>{"symbol": "AAPL", "option_symbol": "...", "quantity": 1, "instruction": "BUY_TO_OPEN", "order_type": "LIMIT", "price": 5.50}</code></p>
+        <h3>Order Status</h3>
+        <div class="api-endpoint">
+            <span class="method get">GET</span>
+            /api/orders/&lt;account_id&gt;/&lt;order_id&gt;
+        </div>
+    </div>
+    <div class="section">
+        <h2>🐍 Python Client Usage</h2>
+        <pre style="background: #282c34; color: #abb2bf; padding: 15px; border-radius: 5px; overflow-x: auto;"><span style="color: #c678dd;">from</span> schwab_client <span style="color: #c678dd;">import</span> SchwabClient
+
+<span style="color: #5c6370;"># Client automatically loads saved tokens</span>
+client = SchwabClient()
+
+<span style="color: #5c6370;"># Place an options order</span>
+order = client.place_option_order(
+    account_id=<span style="color: #98c379;">"your_account_hash"</span>,
+    symbol=<span style="color: #98c379;">"AAPL"</span>,
+    option_symbol=<span style="color: #98c379;">"AAPL_123456C00150000"</span>,
+    quantity=<span style="color: #d19a66;">1</span>,
+    instruction=<span style="color: #98c379;">"BUY_TO_OPEN"</span>,
+    order_type=<span style="color: #98c379;">"LIMIT"</span>,
+    price=<span style="color: #d19a66;">5.50</span>
+)
+        </pre>
+    </div>
+    <div class="section">
+        <h2>📚 Next Steps</h2>
+        <ul>
+            <li>Get your account hash ID from Schwab API or account info endpoint</li>
+            <li>Use the API endpoints above or the Python client to execute trades</li>
+            <li>Check <code>examples/place_order.py</code> for more examples</li>
+            <li>See <code>README.md</code> for full documentation</li>
+        </ul>
+    </div>
+</body>
+</html>

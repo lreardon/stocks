@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Connection Test - Schwab API</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <h1>✅ Connection Test Successful!</h1>
+    
+    <div class="success">
+        <strong>Your application is authorized and ready to trade!</strong><br>
+        Successfully retrieved {{ account_count }} account(s) from Schwab API.
+    </div>
+    
+    <h2>📋 Your Accounts</h2>
+    {% for acc in accounts %}
+    <div class="account">
+        <strong>Account {{ loop.index }}</strong><br>
+        Account Number: {{ acc.number }}<br>
+        Type: {{ acc.type }}<br>
+        <strong>Hash ID:</strong> <span class="hash-id">{{ acc.hash_id }}</span>
+        <p style="color: #666; font-size: 14px;">
+            ℹ️ Use this hash ID in your API calls
+        </p>
+    </div>
+    {% endfor %}
+    
+    <h2>🐍 Example Usage</h2>
+    <pre>
+from schwab_client import SchwabClient
+
+client = SchwabClient()
+
+# Use your account hash ID
+account_id = "{{ accounts[0].hash_id if accounts else 'YOUR_HASH_ID' }}"
+
+# Get account details
+account = client.get_account(account_id, fields="positions")
+print(account)
+    </pre>
+    
+    <a href="/dashboard" class="button">Back to Dashboard</a>
+</body>
+</html>

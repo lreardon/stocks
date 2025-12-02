@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ symbol }} Option Chain - Schwab API</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <script>
+        let currentSymbol = '{{ symbol }}';
+        let refreshInterval;
+        let countdown = 5;
+        let isPaused = false;
+
+        function updateCountdown() {
+            if (!isPaused) {
+                document.getElementById('countdown').textContent = countdown;
+                countdown--;
+                if (countdown < 0) {
+                    countdown = 5;
+                    refreshOptionsChain();
+                }
+            }
+        }
+
+        function startAutoRefresh() {
+            if (!refreshInterval) {
+                refreshInterval = setInterval(updateCountdown, 1000);
+            }
+        }
+
+        function stopAutoRefresh() {
+            if (refreshInterval) {
+                clearInterval(refreshInterval);
+                refreshInterval = null;
+            }
+            document.getElementById('countdown').textContent = 'paused';
+        }
+
+        function toggleAutoRefresh() {
+            const btn = document.getElementById('toggleBtn');
+            isPaused = !isPaused;
+            if (isPaused) {
+                btn.textContent = '▶️ Resume Auto-Refresh';
+                btn.style.background = '#28a745';
+                document.getElementById('countdown').textContent = 'paused';
+            } else {
+                countdown = 5;
+                btn.textContent = '⏸️ Pause Auto-Refresh';
+                btn.style.background = '#ffc107';
+                startAutoRefresh();
+            }
+        }
+
+        function changeSymbol() {
+            const newSymbol = document.getElementById('newSymbol').value.trim().toUpperCase();
+            if (newSymbol) {
+                currentSymbol = newSymbol;
+                window.history.pushState({}, '', '/options-chain?symbol=' + newSymbol);
+                refreshOptionsChain();
+            }
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                changeSymbol();
+            }
+        }
+
+        async function refreshOptionsChain() {
+            try {
+                const response = await fetch(`/api/options-chain/${currentSymbol}`);
+                const data = await response.json();
+                
+                if (data.error) {
+                    console.error('Error fetching data:', data.error);
+                    return;
+                }
+                
+                updateTables(data);
+            } catch (error) {
+                console.error('Refresh error:', error);
+            }
+        }
+
+        function updateTables(data) {
+            // Update calls table
+            const callsTable = document.querySelector('.options-table.calls tbody');
+            callsTable.innerHTML = data.calls.map(call => `
+                <tr>
+                    <td class="strike price">$${call.strike.toFixed(2)}</td>
+                    <td class="symbol">${call.symbol}</td>
+                    <td class="price">$${call.bid.toFixed(2)}</td>
+                    <td class="price">$${call.ask.toFixed(2)}</td>
+                    <td class="price">$${call.last.toFixed(2)}</td>
+                    <td class="price">${call.volume}</td>
+                    <td class="price">${call.oi}</td>
+                    <td class="price">${call.iv.toFixed(1)}%</td>
+                    <td><button class="button stage-order-btn" onclick="stageOrder('${call.symbol}', '${call.ask}')">Stage Order</button></td>
+                </tr>
+            `).join('');
+
+            // Update puts table
+            const putsTable = document.querySelector('.options-table.puts tbody');
+            putsTable.innerHTML = data.puts.map(put => `
+                <tr>
+                    <td class="strike price">$${put.strike.toFixed(2)}</td>
+                    <td class="symbol">${put.symbol}</td>
+                    <td class="price">$${put.bid.toFixed(2)}</td>
+                    <td class="price">$${put.ask.toFixed(2)}</td>
+                    <td class="price">$${put.last.toFixed(2)}</td>
+                    <td class="price">${put.volume}</td>
+                    <td class="price">${put.oi}</td>
+                    <td class="price">${put.iv.toFixed(1)}%</td>
+                    <td><button class="button stage-order-btn" onclick="stageOrder('${put.symbol}', '${put.ask}')">Stage Order</button></td>
+                </tr>
+            `).join('');
+            
+            // If modal is open, update the staged order prices
+            if (currentStagedSymbol) {
+                const allOptions = [...data.calls, ...data.puts];
+                const stagedOption = allOptions.find(opt => opt.symbol === currentStagedSymbol);
+                if (stagedOption) {
+                    updateModalPrices(stagedOption.symbol, stagedOption.ask);
+                }
+            }
+        }
+
+        window.onload = startAutoRefresh;
+    </script>
+</head>
+<body>
+    <div class="header">
+        <h1>📊 {{ symbol }} Option Chain</h1>
+        <div>
+            <button id="toggleBtn" onclick="toggleAutoRefresh()" class="button" style="background: #ffc107;">⏸️ Pause Auto-Refresh</button>
+            <a href="/options-chain" class="button">Change Symbol</a>
+            <a href="/dashboard" class="button">Back to Dashboard</a>
+        </div>
+    </div>
+    <div class="symbol-input">
+        <label><strong>Quick Switch:</strong></label>
+        <input type="text" id="newSymbol" placeholder="Enter symbol" onkeypress="handleKeyPress(event)" value="{{ symbol }}">
+        <button onclick="changeSymbol()">Load</button>
+    </div>
+    <div class="info">
+        <strong>Underlying Price:</strong> ${{ "%.2f"|format(underlying_price) }}<br>
+        <strong>Expiration:</strong> {{ expiration }}<br>
+        <strong>Total Expirations Available:</strong> {{ total_expirations }}<br>
+        <small>Showing nearest expiration with {{ calls|length }} call strikes and {{ puts|length }} put strikes</small>
+        <div class="status">🔄 Auto-refreshing in <span id="countdown">5</span> seconds</div>
+    </div>
+    <div class="options-container">
+        <div class="options-table calls">
+            <h2>📈 Calls</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Strike</th>
+                        <th>Symbol</th>
+                        <th>Bid</th>
+                        <th>Ask</th>
+                        <th>Last</th>
+                        <th>Volume</th>
+                        <th>OI</th>
+                        <th>IV</th>
+                        <th>Stage Order</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for call in calls %}
+                    <tr {% if call.strike <= underlying_price and calls[loop.index0 + 1].strike > underlying_price %}class="atm"{% endif %}>
+                        <td class="strike price">${{ "%.2f"|format(call.strike) }}</td>
+                        <td class="symbol">{{ call.symbol }}</td>
+                        <td class="price">${{ "%.2f"|format(call.bid) }}</td>
+                        <td class="price">${{ "%.2f"|format(call.ask) }}</td>
+                        <td class="price">${{ "%.2f"|format(call.last) }}</td>
+                        <td class="price">{{ call.volume }}</td>
+                        <td class="price">{{ call.oi }}</td>
+                        <td class="price">{{ "%.1f"|format(call.iv) }}%</td>
+                        <td><button class="button stage-order-btn" onclick="stageOrder('{{ call.symbol }}', '{{ call.ask }}')">Stage Order</button></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="options-table puts">
+            <h2>📉 Puts</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Strike</th>
+                        <th>Symbol</th>
+                        <th>Bid</th>
+                        <th>Ask</th>
+                        <th>Last</th>
+                        <th>Volume</th>
+                        <th>OI</th>
+                        <th>IV</th>
+                        <th>Stage Order</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for put in puts %}
+                    <tr {% if put.strike <= underlying_price and puts[loop.index0 + 1].strike > underlying_price %}class="atm"{% endif %}>
+                        <td class="strike price">${{ "%.2f"|format(put.strike) }}</td>
+                        <td class="symbol">{{ put.symbol }}</td>
+                        <td class="price">${{ "%.2f"|format(put.bid) }}</td>
+                        <td class="price">${{ "%.2f"|format(put.ask) }}</td>
+                        <td class="price">${{ "%.2f"|format(put.last) }}</td>
+                        <td class="price">{{ put.volume }}</td>
+                        <td class="price">{{ put.oi }}</td>
+                        <td class="price">{{ "%.1f"|format(put.iv) }}%</td>
+                        <td><button class="button stage-order-btn" onclick="stageOrder('{{ put.symbol }}', '{{ put.ask }}')">Stage Order</button></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <!-- Modal for staged order -->
+<div id="orderModal" class="modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.5); z-index:1000;">
+    <div style="background:#fff; margin:10vh auto; padding:2em; max-width:400px; border-radius:8px; position:relative;">
+        <span style="position:absolute; top:10px; right:20px; cursor:pointer; font-size:1.5em;" onclick="closeOrderModal()">&times;</span>
+        <h2>Stage Order</h2>
+        <div id="orderDetails"></div>
+        <button class="button" onclick="closeOrderModal()">Close</button>
+    </div>
+</div>
+<script>
+    let currentStagedSymbol = null;
+    
+    function stageOrder(symbol, ask) {
+        currentStagedSymbol = symbol;
+        updateModalPrices(symbol, ask);
+        document.getElementById('orderModal').style.display = 'block';
+    }
+    
+    function updateModalPrices(symbol, ask) {
+        const buyPrice = parseFloat(ask);
+        const sellPrice = (buyPrice * 1.2).toFixed(2);
+        const html = `<strong>Symbol:</strong> ${symbol}<br>
+            <strong>Order Type:</strong> First-Triggers-Seq<br>
+            <strong>Step 1:</strong> Limit Buy @ $${buyPrice.toFixed(2)}<br>
+            <strong>Step 2:</strong> Limit Sell @ $${sellPrice} (20% profit)<br>`;
+        document.getElementById('orderDetails').innerHTML = html;
+    }
+    
+    function closeOrderModal() {
+        document.getElementById('orderModal').style.display = 'none';
+        currentStagedSymbol = null;
+    }
+</script>
+</body>
+</html>
